@@ -1,24 +1,39 @@
 ---
 name: AWS Data Migration
+
 on:
   push:
     branches:
       - main
+
 permissions:
   contents: read
   id-token: write
+
 jobs:
   migrate:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Configure AWS
+
+      - name: Debug GitHub context
+        run: |
+          echo "Repository: $GITHUB_REPOSITORY"
+          echo "Branch: $GITHUB_REF"
+          echo "Event: $GITHUB_EVENT_NAME"
+
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Verify AWS identity
+        run: aws sts get-caller-identity
+
       - name: Test Python
         run: python -m py_compile scripts/migration.py
+
       - name: Upload files to S3
-        run: aws s3 sync data/ s3://${{ vars.S3_BUCKET }}/data/
